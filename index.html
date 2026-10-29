@@ -1238,6 +1238,28 @@ body{
   text-shadow:0 1px 3px rgba(0,0,0,.65);font-variant-numeric:tabular-nums;}
 #glShark .f{position:absolute;width:0;background:linear-gradient(180deg,#61f4bd 0%,#47dab9 35%,#2aa8a2 70%,#19706f 100%);
   box-shadow:0 0 6px rgba(97,244,189,.55);transition:width .18s linear;}
+/* 選角頁：選中卡的綠色勾選框線掃光——沿卡片外框 7px 環帶(mask 挖空中間，只亮在綠框上)，
+   一道白綠斜光由左下往右上推進 6.3s，停 1.2s 後再掃，循環 */
+#charSelect .card.selected::after{content:'';position:absolute;inset:-6px;border-radius:20px;padding:10px;pointer-events:none;z-index:3;
+  mix-blend-mode:screen;   /* 環帶涵蓋綠框外 1.5px ～ 框內 4px，光帶加寬加亮，掃過時整段綠框明顯泛白 */
+  background:linear-gradient(45deg,rgba(255,255,255,0) 0 40%,rgba(150,255,175,.75) 45%,rgba(255,255,255,1) 50%,rgba(150,255,175,.75) 55%,rgba(255,255,255,0) 60% 100%)
+             no-repeat;background-size:300% 300%;background-position:90% 10%;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  animation:csSelSweep 7.5s ease-in-out infinite;}   /* 2026/10：速度提升 100%(一趟 12.6s → 6.3s)，停頓維持 1.2s */
+@keyframes csSelSweep{0%{background-position:90% 10%}84%,100%{background-position:10% 90%}}
+/* 掃光層級低於右上角綠色圓形勾勾：勾勾提到 z-index 4，掃到右上角時不會蓋過勾勾 */
+#charSelect .card.selected .check{z-index:4;}
+/* 登入遊戲鍵掃光：按鍵出現後開始，一道白色斜光由左至右掃過按鍵 0.9s，停 1.7s，循環；開場中(csIntro)暫停 */
+#charSelect #loginBtn{position:relative;overflow:hidden;}
+#charSelect #loginBtn::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;mix-blend-mode:screen;
+  background:linear-gradient(105deg,rgba(255,255,255,0) 0 38%,rgba(255,255,255,.75) 50%,rgba(255,255,255,0) 62% 100%) no-repeat;
+  background-size:300% 100%;background-position:90% 0;animation:csBtnSweep 2.6s ease-in-out infinite;}
+#charSelect.csIntro #loginBtn::after{animation:none;}
+@keyframes csBtnSweep{0%{background-position:90% 0}35%,100%{background-position:10% 0}}
+@media (prefers-reduced-motion:reduce){ #charSelect .card.selected::after,#charSelect #loginBtn::after{animation:none;opacity:0;} }
+/* 選角頁開場前(csPre)：卡片與下方按鍵先隱藏，避免 LOADING 淡出時先閃出最終畫面 */
+#charSelect.csPre .card,#charSelect.csPre .btn-row{opacity:0;}
 /* 頭像翻到手機面時的「綁定」標籤：圓框下緣置中、壓在手機下半部，金橘膠囊＋深棕字；
    放在 #avatarBind 內，隨手機面一起淡入淡出(頭像面時不顯示) */
 /* 手機面圖示改用珍珠白 3D 手機圖(去背 WebP 82×128，顯示 21.53×33.6，與原 CSS 手機同高)；
@@ -1288,6 +1310,15 @@ body{
 #ttzOverlay{position:fixed;inset:0;z-index:2147483000;background:#0a0420;opacity:0;visibility:hidden;transition:opacity .3s ease,visibility .3s;}
 #ttzOverlay.on{opacity:1;visibility:visible;}
 #ttzOverlay iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#0a0420;}
+/* 遊戲分區：點選後的選取標記閃一次——只亮膠囊的邊框邊緣(白色亮邊＋內側淡金光＋外側金色光暈)，
+   中間保持透明，不擋到圖示與文字；約 0.5s 亮起再熄滅一次；膠囊本身不放大 */
+#gameTypePanel .gtItem,#burgerPanel .gtItem{position:relative;}
+#gameTypePanel .gtItem.gtFlash::after,#burgerPanel .gtItem.gtFlash::after{content:'';position:absolute;inset:3px 2px;border-radius:999px;pointer-events:none;z-index:3;   /* 漢堡選單(導引／設定)套用同一規則 */
+  background:none;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.95),inset 0 0 7px 2px rgba(255,240,180,.75),0 0 10px 3px rgba(255,214,90,.85);
+  animation:gtEdge .5s ease-out 1 both;}
+@keyframes gtEdge{0%{opacity:0}28%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){ #gameTypePanel .gtItem.gtFlash::after,#burgerPanel .gtItem.gtFlash::after{animation:none;opacity:0;} }
 /* 選單展開跑框光(runFrameFx 建立 svg.runFx)：遊戲分區由下而上、漢堡選單由上而下，0.55s(加速)，到端點後 0.18s 淡出 */
 svg.runFx{position:absolute;left:-4px;top:-4px;pointer-events:none;z-index:3;overflow:visible;opacity:0;}
 svg.runFx path{fill:none;stroke-linecap:round;}
@@ -1300,17 +1331,18 @@ svg.runFx.run .c{animation:gtRunC .55s cubic-bezier(.45,.05,.75,.6) forwards;}
 @keyframes gtRunC{to{stroke-dashoffset:-86;}}
 @keyframes gtRunFade{0%{opacity:1}75%{opacity:1}100%{opacity:0}}
 /* 大廳遊戲館圖金框掃光：沿卡片邊緣 3px 環帶(以 mask 挖空中間，只留金框所在的邊)，
-   一道白金斜光由「左下往右上」推進，screen 混色讓金框亮起；由畫面內最左欄依序往右一欄一欄掃(上下排同欄一起)，
-   掃完直接接下一欄、到最右邊後回到最左邊循環(排程見 hallFrameSweep)。光帶垂直於推進方向(45°)，一趟 5.4 秒 */
+   一道白金斜光由「左下往右上」推進，screen 混色讓金框亮起；每張館圖各自獨立循環，一趟 4.5s＋停 0.5s(相位見 hallSweepPhase) */
 .bigCard.hasArt::after,.smallCard.hasArt::after{content:'';position:absolute;inset:0;border-radius:16px;padding:3px;
   pointer-events:none;z-index:2;mix-blend-mode:screen;opacity:0;
   background:linear-gradient(45deg,rgba(255,240,190,0) 0 42%,rgba(255,236,170,.55) 46%,rgba(255,255,240,1) 50%,rgba(255,236,170,.55) 54%,rgba(255,240,190,0) 58% 100%)
              no-repeat;background-size:300% 300%;background-position:90% 10%;
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
   mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);}
-.bigCard.hasArt.frameSweep::after,.smallCard.hasArt.frameSweep::after{opacity:1;animation:cardFrameSweep 5.4s ease-in-out 1 both;}
-@keyframes cardFrameSweep{from{background-position:90% 10%}to{background-position:10% 90%}}
-@media (prefers-reduced-motion:reduce){ .bigCard.hasArt.frameSweep::after,.smallCard.hasArt.frameSweep::after{animation:none;opacity:0;} }
+.bigCard.hasArt::after,.smallCard.hasArt::after{opacity:1;animation:cardFrameSweep 5s ease-in-out infinite;animation-delay:var(--swd,0s);}
+/* 2026/10：每張館圖各自獨立循環；掃光速度降為 1/3(光帶 1.5s → 4.5s 由左下推到右上)＋停 0.5s，一輪 5s；
+   起跑相位由 hallSweepPhase 隨機指定(負的 animation-delay，範圍同週期)，各張錯開、互不同步 */
+@keyframes cardFrameSweep{0%{background-position:90% 10%}90%,100%{background-position:10% 90%}}
+@media (prefers-reduced-motion:reduce){ .bigCard.hasArt::after,.smallCard.hasArt::after{animation:none;opacity:0;} }
 /* 遊戲館疊加功能全數屏蔽(gs.bare，目前僅沙克盃)：頂部下拉鍵、右側轉盤、聊天鍵、聊天快訊不顯示；左上抽屜與返回膠囊由 topMenu/backMenu:false 關閉 */
 #gameView.bare #gameDrawerBtn,#gameView.bare #gvWheelWrap,#gameView.bare #gvChatLaunch,#gameView.bare #gvQuickMsgs{display:none !important;}
 /* ===== VIP 1~10 圖示(取代原本的藍色皇冠卡片)：圖示本身即含底版與描邊，外層不再畫底 ===== */
@@ -4495,7 +4527,7 @@ svg.runFx.run .c{animation:gtRunC .55s cubic-bezier(.45,.05,.75,.6) forwards;}
   </div>
 
   <!-- ===== 選擇角色登入畫面（點擊「登入遊戲」後開啟娛樂城大廳） ===== -->
-  <div id="charSelect">
+  <div id="charSelect" class="csPre">   <!-- csPre：開場動畫前先藏卡片與按鍵，由 playCsIntro 接手 -->
 <!-- 1920×1080 固定比例舞台 -->
 <div id="csStage">
 
@@ -4630,6 +4662,7 @@ const BGM_B64 = "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//t
   }
   function enterGame(){
     boot.classList.add('hide');             /* 淡出後移除，露出下層選擇角色畫面 */
+    if(window.playCsIntro) window.playCsIntro();   /* 選角頁開場：角色卡由中央放大後飛回各自位置，再顯示下方按鍵 */
     setTimeout(()=>boot.remove(), 600);
     tryStartBgm();
   }
@@ -4925,6 +4958,38 @@ function render() {
 }
 
 /* ===== 互動 ===== */
+/* ===== 選角頁開場動畫(LOADING 結束點擊進入後播放一次) =====
+   五張角色卡從畫面中央以 15% 大小出現，一邊放大一邊往各自位置飛出(放大與位移同時進行，0.7s，
+   先快後慢；卡片間錯開 50ms，像一疊牌攤開)；全部就位後，下方「創新角色／登入遊戲」才淡入上浮。
+   位移以 #csStage 的縮放換算回舞台座標；結束影格不寫 transform，自然接回選中卡的 translateY(-6px) */
+window.playCsIntro = function(){
+  const cs = document.getElementById('charSelect'), stage = document.getElementById('csStage');
+  const cards = [...document.querySelectorAll('#cardTrack .card')], row = document.querySelector('#charSelect .btn-row');
+  if(!cs || !stage || !cards.length){ if(cs) cs.classList.remove('csPre'); return; }
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  cs.classList.remove('csPre');
+  if(reduce || !cards[0].animate) return;
+  cs.classList.add('csIntro');   /* 開場進行中：登入鍵掃光先暫停，按鍵出現後才從第一道開始 */
+  const sr = stage.getBoundingClientRect(), k = sr.width / (stage.offsetWidth || 1920);
+  const cx = sr.left + sr.width/2, cy = sr.top + sr.height/2;
+  const DUR = 700, STAG = 50;
+  cards.forEach((c, i) => {
+    const r = c.getBoundingClientRect();
+    const dx = (cx - (r.left + r.width/2)) / k, dy = (cy - (r.top + r.height/2)) / k;
+    /* 位移與放大同一段曲線同時進行(結束影格交給元素原本的 transform)；透明度在前 25% 就淡入完成 */
+    c.animate([
+      { offset:0, transform:`translate(${dx}px,${dy}px) scale(.15)`, opacity:0 },
+      { offset:.25, opacity:1 }
+    ], { duration:DUR, delay:i*STAG, easing:'cubic-bezier(.22,.9,.3,1.04)', fill:'backwards' });
+  });
+  if(row){
+    const start = DUR + (cards.length-1)*STAG + 60;
+    row.style.pointerEvents = 'none';
+    const a = row.animate([{opacity:0, transform:'translateY(26px)'},{opacity:1, transform:'none'}],
+                          { duration:380, delay:start, easing:'cubic-bezier(.2,.8,.3,1)', fill:'backwards' });
+    a.onfinish = () => { row.style.pointerEvents = ''; cs.classList.remove('csIntro'); };
+  }
+};
 function selectCard(i) {
   selectedIdx = i;
   render();
@@ -5568,32 +5633,10 @@ function makeSmall(fn){
   sc.innerHTML = `<div class="cardLabel">遊戲<br>館圖</div>`;
   return sc;
 }
-/* 館卡金框掃光排程：由畫面內最左邊的館圖開始，一欄一欄往右依序掃(上下兩排同一欄的館圖一起掃)，
-   每欄一趟 5.4s，掃完直接接下一欄；掃到畫面內最右邊一欄後，回到最左邊循環。(每欄一趟現為 5.4s)
-   每一步都依當下捲動位置重新取「可視範圍內」的欄位；大廳不可見時(進遊戲)只輪詢不掃 */
-(function hallFrameSweep(){
-  if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const SWEEP_MS=5400, TOL=24; let lastX=-Infinity;   /* 一趟 5.4s(須與 CSS cardFrameSweep 時長一致) */
-  function columns(){
-    const vp=document.getElementById('hallViewport'); const vr=vp.getBoundingClientRect();
-    const cards=[...document.querySelectorAll('#hallTrack .hasArt')].map(c=>({c, r:c.getBoundingClientRect()}))
-      .filter(o=>o.r.width>0 && o.r.left+o.r.width/2>vr.left && o.r.left+o.r.width/2<vr.right);   /* 卡片中心落在可視範圍內 */
-    cards.sort((a,b)=>a.r.left-b.r.left);
-    const cols=[];
-    cards.forEach(o=>{ const col=cols.find(k=>Math.abs(k.x-o.r.left)<TOL); if(col) col.cards.push(o.c); else cols.push({x:o.r.left, cards:[o.c]}); });
-    return cols;
-  }
-  function next(){
-    const vp=document.getElementById('hallViewport'), gv=document.getElementById('gameView');
-    if(!vp || !vp.offsetParent || (gv && gv.classList.contains('open'))){ setTimeout(next,1000); return; }
-    const cols=columns(); if(!cols.length){ setTimeout(next,1000); return; }
-    let col=cols.find(k=>k.x>lastX+TOL); if(!col) col=cols[0];          /* 下一欄；超過最右邊就回到最左邊 */
-    lastX=col.x;
-    col.cards.forEach(c=>{ c.classList.remove('frameSweep'); void c.offsetWidth; c.classList.add('frameSweep'); });
-    setTimeout(()=>{ col.cards.forEach(c=>c.classList.remove('frameSweep')); next(); }, SWEEP_MS);
-  }
-  setTimeout(next,1200);
-})();
+/* 館卡金框掃光：每張各自循環(週期 5s)，每次渲染館圖後給每張一個隨機起跑相位，彼此錯開不同步 */
+function hallSweepPhase(){
+  document.querySelectorAll('#hallTrack .hasArt').forEach(c=>{ c.style.setProperty('--swd', (-Math.random()*5).toFixed(2)+'s'); });
+}
 /* 轉轉好運：全螢幕覆蓋層 + iframe(srcdoc＝內嵌頁面)。頁面自帶等比縮放(fit)，以視窗大小為準；
    關閉＝頁內右上返回鍵 postMessage('ttzhy-close')，淡出後移除 iframe(音樂一併停止)；Esc 亦可關閉 */
 function openTtzhy(){
@@ -5619,6 +5662,7 @@ function closeTtzhy(){
 window.addEventListener('message', e => { if(e.data && e.data.type === 'ttzhy-close') closeTtzhy(); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeTtzhy(); });
 function renderHall(type){
+  setTimeout(hallSweepPhase, 0);
   currentType = type;
   setHallBg(type);
   const cfg = HALL_LAYOUTS[type] || HALL_LAYOUTS['國際'];
@@ -7912,8 +7956,10 @@ document.getElementById('gameTypeBtn').addEventListener('click', toggleGameType)
 gtPanel.addEventListener('click', e => {
   const item = e.target.closest('.gtItem');
   if(!item) return;
-  gtPanel.querySelectorAll('.gtItem').forEach(i => i.classList.remove('active'));
+  gtPanel.querySelectorAll('.gtItem').forEach(i => i.classList.remove('active','gtFlash'));
   item.classList.add('active');
+  void item.offsetWidth; item.classList.add('gtFlash');            /* 選取標記：邊框邊緣閃一次(0.5s) */
+  clearTimeout(item._gtF); item._gtF = setTimeout(() => item.classList.remove('gtFlash'), 560);
   /* 以 data-fn 取型別，不讀 .gtLabel：標籤是純顯示字串（SLOT／國際 已對調），
      讀標籤會把館圖配置一起帶著換，違反「只改標籤、內容保留」。 */
   const type = item.dataset.fn.replace('遊戲類型-', '');
@@ -7990,8 +8036,10 @@ document.getElementById('burgerBtn').addEventListener('click', () => {
 burgerPanel.addEventListener('click', e => {
   const item = e.target.closest('.gtItem');
   if(!item || !burgerPanel.contains(item)) return;
-  burgerPanel.querySelectorAll('.gtItem').forEach(i => i.classList.remove('active'));
+  burgerPanel.querySelectorAll('.gtItem').forEach(i => i.classList.remove('active','gtFlash'));
   item.classList.add('active');
+  void item.offsetWidth; item.classList.add('gtFlash');            /* 選取標記：邊框邊緣閃一次(0.5s)，同遊戲分區 */
+  clearTimeout(item._gtF); item._gtF = setTimeout(() => item.classList.remove('gtFlash'), 560);
 }, true);
 
 /* ================= 大廳設定面板 ================= */
