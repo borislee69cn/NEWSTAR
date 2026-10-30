@@ -5718,8 +5718,10 @@ const CARD_DATA = {
 function cardVideoUrl(key){
   if(key in CARD_URLS) return CARD_URLS[key];
   const cfg = CARD_SHOWS[key], t = document.createElement('video');
-  const fmt = (t.canPlayType && t.canPlayType('video/webm; codecs="vp9"') !== '') ? 'webm'
-            : (t.canPlayType && t.canPlayType('video/mp4; codecs="avc1.4D401E"') !== '') ? 'mp4' : null;
+  /* 手機修正：優先用 H.264 MP4(iOS／Android 皆原生硬體解碼、跳轉穩定)；只有不支援 H.264 的瀏覽器(部分 Chromium／預覽環境)才改用 WebM。
+     原本優先 WebM，iOS Safari 的 WebM 播完跳回第 0 格後常無法再次播放，造成「播 1～2 次就停」 */
+  const fmt = (t.canPlayType && t.canPlayType('video/mp4; codecs="avc1.4D401E"') !== '') ? 'mp4'
+            : (t.canPlayType && t.canPlayType('video/webm; codecs="vp9"') !== '') ? 'webm' : null;
   const name = fmt === 'webm' ? cfg.webm : fmt === 'mp4' ? cfg.mp4 : null;
   const b64 = name && CARD_DATA[name] ? CARD_DATA[name]() : '';
   if(!b64){ CARD_URLS[key] = ''; return ''; }
@@ -5733,14 +5735,29 @@ function cardVideoUrl(key){
 const REST_MS = 3000, DISSOLVE_MS = 450, SHOW_START_DELAY = 1000;
 let SHOWS_ON = false, SHOW_START_T = 0;
 function cardVid(key){ const c = document.querySelector('#hallTrack ' + CARD_SHOWS[key].sel); return c ? c.querySelector('.cardVidWrap .cardVid') : null; }
-function playCard(key){ const v = cardVid(key); if(v && SHOWS_ON){ const pp = v.play(); if(pp && pp.catch) pp.catch(()=>{}); } }
+/* 手機修正：play() 被拒(省電模式、解碼器忙碌、背景切回等)時自動重試；並記住「應該在播」(_want)，由看門狗補播 */
+function safePlay(v, tries){
+  if(!v || !SHOWS_ON) return;
+  v._want = true;
+  const pp = v.play();
+  if(pp && pp.catch) pp.catch(() => { if(tries > 0 && SHOWS_ON && v.isConnected) setTimeout(() => safePlay(v, tries - 1), 500); });
+}
+function playCard(key){ const v = cardVid(key); if(v && SHOWS_ON){ if(v.ended || v.currentTime >= (v.duration || 0) - 0.05){ try{ v.currentTime = 0; }catch(e){} } safePlay(v, 6); } }
+/* 看門狗：每秒檢查一次，「應該在播卻停住」(非播完)就補播；分頁切回前景時整組重新開始 */
+setInterval(() => {
+  if(!SHOWS_ON || document.hidden) return;
+  ['dc','odin'].forEach(k => { const v = cardVid(k); if(v && v._want && v.paused && !v.ended) safePlay(v, 2); });
+}, 1000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden && SHOWS_ON) dcCardEnter(); });
+window.addEventListener('pageshow', (e) => { if(e.persisted && SHOWS_ON) dcCardEnter(); });
 function attachCardVideo(card, key){
   if(!card || card.querySelector('.cardVidWrap')) return;
   const url = cardVideoUrl(key); if(!url) return;
   const cfg = CARD_SHOWS[key];
   const v = document.createElement('video');
   v.className = 'cardVid'; v.muted = true; v.loop = false; v.playsInline = true; v.autoplay = false;
-  v.setAttribute('muted',''); v.setAttribute('playsinline',''); v.setAttribute('aria-hidden','true');
+  v.setAttribute('muted',''); v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline',''); v.setAttribute('aria-hidden','true');
+  v.setAttribute('disablepictureinpicture',''); v.setAttribute('disableremoteplayback',''); v.preload = 'auto';
   v.addEventListener('loadeddata', () => v.classList.add('on'));
   const drawCover = (cv, src) => {
     const wrapEl = v.parentNode; if(!wrapEl) return false;
@@ -5759,7 +5776,7 @@ function attachCardVideo(card, key){
     const fc = document.createElement('canvas'); fc.className = 'cardFreeze'; wrapEl.appendChild(fc);
   }, {once:true});
   v.addEventListener('ended', () => {
-    clearTimeout(v._rest);
+    clearTimeout(v._rest); v._want = false;
     const wrapEl = v.parentNode; if(!wrapEl) return;
     const fc = wrapEl.querySelector('canvas.cardFreeze');
     if(fc && drawCover(fc, v)){
@@ -5792,7 +5809,7 @@ function attachHallCardVideos(){
 }
 function resetCard(key){
   const v = cardVid(key); if(!v) return;
-  clearTimeout(v._rest); v.pause();
+  clearTimeout(v._rest); v._want = false; v.pause();
   try{ v.currentTime = 0; }catch(e){}
   const fc = v.parentNode && v.parentNode.querySelector('canvas.cardFreeze');
   if(fc){ fc.style.transition = 'none'; fc.style.opacity = '0'; }
@@ -5806,7 +5823,7 @@ function dcCardEnter(){
 /* dcCardLeave — 離開大廳(點館圖進入載入／說明頁／遊戲)：全部暫停並取消排程 */
 function dcCardLeave(){
   SHOWS_ON = false; clearTimeout(SHOW_START_T);
-  ['dc','odin'].forEach(k => { const v = cardVid(k); if(v){ clearTimeout(v._rest); v.pause(); } });
+  ['dc','odin'].forEach(k => { const v = cardVid(k); if(v){ clearTimeout(v._rest); v._want = false; v.pause(); } });
 }
 window.dcCardEnter = dcCardEnter; window.dcCardLeave = dcCardLeave;
 function renderHall(type){
