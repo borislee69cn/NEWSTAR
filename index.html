@@ -1172,7 +1172,7 @@ body{
 #gvBetPanel .bpSeg.stack b[data-pos="right"]{--dx:104.4px;--s:.72;z-index:1;}
 #gvBetPanel .bpSeg.stack b:not([data-pos="front"]):hover::after{opacity:.6;}
 #gvBetPanel .bpSeg.stack b:not([data-pos="front"]):active{background:linear-gradient(180deg,#444,#2a2a2a);}
-#gvBetPanel .bpSeg.stack img{height:32px;opacity:1;transform:none;}   /* LOGO 上下各留 6px，不貼框 */
+#gvBetPanel .bpSeg.stack img{height:44px;opacity:1;transform:none;}   /* LOGO 等比放大 32 → 44px：頁籤已加高到 57px，上下仍各留約 6.5px 不貼框(三國骰 LOGO 同規則) */
 #gvBetPanel .bpSeg.stack b[data-pos="front"] img{filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));}
 #gvBetPanel .bpSeg.stack .bpDot{z-index:2;
   /* 卡片退到後排時整張縮 72%(--s)，紅點反向放大抵銷，畫面上維持 14px＋2px 白邊，與 BET 鍵紅點一致 */
@@ -1182,16 +1182,26 @@ body{
    由 JS 量測實際字形墨跡與行框的偏差，寫入 --ty 做垂直校正 */
 #gvBetPanel .bpSeg .lbl{display:block;line-height:1;transform:translateY(var(--ty,0px));}
 /* 一般清單底部導流橫幅：LUCKY GO 紫底金框，點擊切到 LUCKY GO；每 3.2 秒掃過一道高光 */
-#gvBetPanel .bpPromo{flex:none;position:relative;overflow:hidden;margin:6px 12px 13px;height:40px;border-radius:6px;cursor:pointer;
-  display:flex;align-items:center;gap:8px;padding:0 10px 0 8px;
+#gvBetPanel .bpPromo{flex:none;position:relative;overflow:hidden;margin:8px 12px 11px;height:40px;border-radius:6px;cursor:pointer;   /* 2026/10：上下間距統一為 8px(下方 11＝8＋3px 底座厚度)，置中於清單下緣與面板底邊之間 */
+  display:flex;align-items:center;gap:5px;padding:0 10px 0 8px;   /* 間距 8 → 5px，騰出空間讓文案統一 18px */
   background:linear-gradient(180deg,#7446ea 0%,#5a2fd2 45%,#3f1aa6 100%);
   box-shadow:inset 0 0 0 1px rgba(255,214,90,.8),inset 0 2px 0 rgba(255,255,255,.28),inset 0 -3px 0 rgba(0,0,0,.25),
              0 3px 0 #2a0f6e,0 5px 9px rgba(0,0,0,.45);                 /* 凸起：上緣高光、下緣暗邊、3px 底座厚度 */
   transition:transform .08s ease,box-shadow .08s ease;}
 #gvBetPanel .bpPromo img{height:28px;width:auto;max-width:58px;object-fit:contain;flex:none;}   /* 寬版 LOGO(如三國骰)限寬，不擠到文字 */
-#gvBetPanel .bpPromo span{flex:1;min-width:0;color:#fff;font-size:15px;font-weight:700;white-space:nowrap;letter-spacing:0;}   /* 字距收 0，容納寬版 LOGO＋較長文案 */
+#gvBetPanel .bpPromo span{flex:1;min-width:0;color:#fff;font-size:18px;font-weight:700;white-space:nowrap;letter-spacing:0;overflow:hidden;}   /* 2026/10：統一 18px；fitPromoText 僅在萬一放不下時才往下縮(保險) */   /* 字距收 0，容納寬版 LOGO＋較長文案 */
 #gvBetPanel .bpPromo span em{font-style:normal;color:#ffcb2f;}   /* 與 LUCKY GO 說明框的 20% 同為皇冠金黃 */
 #gvBetPanel .bpPromo i{flex:none;color:#ffd24a;font-style:normal;font-size:22px;font-weight:700;line-height:1;}
+/* 箭形圖標：金色漸層雙箭頭(»)，深色描邊＋外光，前後兩道錯開閃亮並輕推向右，提示「點我前往」 */
+#gvBetPanel .bpPromo i.bpArrow{display:flex;align-items:center;width:30px;height:24px;margin-right:-2px;
+  filter:drop-shadow(0 0 1.2px #5a2a00) drop-shadow(0 1px 1px rgba(0,0,0,.6)) drop-shadow(0 0 5px rgba(255,200,60,.55));
+  animation:bpArrNudge 1.6s ease-in-out infinite;}
+#gvBetPanel .bpPromo i.bpArrow svg{display:block;}
+#gvBetPanel .bpPromo i.bpArrow .a2{opacity:.55;animation:bpArrBlink 1.6s ease-in-out infinite;}
+#gvBetPanel .bpPromo i.bpArrow .a1{animation:bpArrBlink 1.6s ease-in-out infinite .2s;}
+@keyframes bpArrNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+@keyframes bpArrBlink{0%,100%{opacity:.5}40%{opacity:1}}
+@media (prefers-reduced-motion:reduce){ #gvBetPanel .bpPromo i.bpArrow,#gvBetPanel .bpPromo i.bpArrow path{animation:none;} }
 #gvBetPanel .bpPromo::after{content:'';position:absolute;top:0;bottom:0;left:-40%;width:30%;
   background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.35),rgba(255,255,255,0));
   animation:bpShine 3.2s ease-in-out infinite;}
@@ -1227,9 +1237,13 @@ body{
 #gvBetPanel.noLucky .bpMax,#gvBetPanel.noLucky .bkMax,#gvBetPanel.noLucky .bpBar{display:none !important;}
 #gvBetPanel.noLucky .bpList{overflow:hidden;}
 #gvBetPanel.noLucky .bpNormal .bpList{padding:0 12px;}
-#gvBetPanel.noLucky .bpKey .bpBody{margin-top:10px;}
-#gvBetPanel.noLucky .bpKey .bpList{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 20px 4px;align-content:start;}
-#gvBetPanel.noLucky .bkRow{margin:0;height:54px;font-size:27px;}
+/* 高額鑰匙頁(2026/10 起所有遊戲館統一比照沙克盃)：移除 MAXBET 與拖曳捲軸，11,000～20,000 共 10 檔排成 2 欄×5 列，全部直接顯示 */
+/* 選擇器加一層 .bpPane 提高權重：原本的高額鑰匙清單規則(padding:7px 0 4px)與這組同權重且排在後面，
+   會把左右留白蓋成 0，按鍵貼齊面板兩側(與沙克盃原本的樣子不同)；加權後所有遊戲館都與沙克盃一致 */
+#gvBetPanel .bpPane.bpKey .bkMax,#gvBetPanel .bpPane.bpKey .bpBar{display:none !important;}
+#gvBetPanel .bpPane.bpKey .bpBody{margin-top:10px;}
+#gvBetPanel .bpPane.bpKey .bpList{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 20px 4px;align-content:start;overflow:hidden;}
+#gvBetPanel .bpPane.bpKey .bkRow{margin:0;height:54px;font-size:27px;}
 /* 暗黑馬戲團館卡動態圖：圓角與內縮完全依原卡圖金框量測(卡圖 328×679 → 卡片 190.6×394.9，×0.581)：
    金框外緣圓角 上 11.9px／下 16.6px、框線厚約 1.6px。
    影片放在 .cardVidWrap 內：內縮 1.6px 到金框內緣，圓角 上 10.3／下 15px，並用 clip-path＋overflow 雙重裁切
@@ -1461,6 +1475,10 @@ svg.runFx.run .c{animation:gtRunC .55s cubic-bezier(.45,.05,.75,.6) forwards;}
    每欄約 100px，字級 24px 讓「10,000」不擠；右側留 16px 給捲軸。
    橫向分隔線三格接成一條，欄與欄之間有短直線；最後一列不畫底線 */
 #gvBetPanel .bpNormal .bpList,#gvBetPanel .bpLucky .bpList{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:60px;align-content:start;padding:0 16px 0 12px;}
+/* 2026/10：LUCKY GO／三國骰 押注頁移除頂部緞帶(提高20%押注額啟動)，押注選項上移；
+   21 檔＝3 欄×7 列(60px)剛好放進面板，不再需要拖曳捲軸，左右留白改為對稱 */
+#gvBetPanel .bpLucky .bpInfo,#gvBetPanel .bpLucky .bpBar{display:none !important;}
+#gvBetPanel .bpLucky .bpList{overflow:hidden;padding:0 12px;}
 #gvBetPanel .bpRow{display:flex;align-items:center;justify-content:center;position:relative;
   color:#fff;font-size:24px;font-weight:700;cursor:pointer;}
 #gvBetPanel .bpRow::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(255,255,255,.28);}
@@ -4429,7 +4447,10 @@ svg.runFx.run .c{animation:gtRunC .55s cubic-bezier(.45,.05,.75,.6) forwards;}
       <div class="bpPane bpNormal">
         <div class="bpMax">MAXBET</div>
         <div class="bpBody"><div class="bpList"></div><div class="bpBar"><i class="bpThumb"></i></div></div>
-        <div class="bpPromo" role="button"><img class="bpPromoLogo" alt="LUCKY GO"><span>押注<em>+20%</em>・<b class="promoSub" style="font-weight:inherit">收集電力瓶拼大獎</b></span><i>›</i></div>
+        <div class="bpPromo" role="button"><img class="bpPromoLogo" alt="LUCKY GO"><span>押注<em>+20%</em>・<b class="promoSub" style="font-weight:inherit">集電拼大獎</b></span><i class="bpArrow" aria-hidden="true"><svg viewBox="0 0 30 24" width="30" height="24"><defs>
+              <linearGradient id="bpArrG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6c4"/><stop offset=".45" stop-color="#ffd24a"/><stop offset="1" stop-color="#e58a00"/></linearGradient></defs>
+              <path class="a2" d="M4 3.5 12.5 12 4 20.5" fill="none" stroke="url(#bpArrG)" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="a1" d="M14 3.5 22.5 12 14 20.5" fill="none" stroke="url(#bpArrG)" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div>
       </div>
       <div class="bpPane bpLucky">
         <div class="bpInfo" aria-label="提高20%押注額啟動">
@@ -7812,8 +7833,15 @@ function gvIcSpan(cls, name, emoji){
   panel.querySelectorAll('.bpSegLogo,.bpPromoLogo').forEach(im=>im.src=LOGO);
   panel.querySelectorAll('.bpRib .bat').forEach(im=>{ if(typeof LUCKY_BATTERY_IMG==='string') im.src=LUCKY_BATTERY_IMG; });   /* 緞帶兩側小電力瓶(三國骰為鑽石骰，見 setBrand) */
   const segs=[...panel.querySelectorAll('.bpSeg b')];
+  /* 一般頁底導流鈕文字：統一 18px；萬一放不下(日後改長文案)才每次縮 0.5px，最小 12px，避免壓到右側箭頭 */
+  function fitPromoText(){
+    const sp=panel.querySelector('.bpPromo span'); if(!sp || !sp.clientWidth) return;
+    let fs=18; sp.style.fontSize=fs+'px';
+    while(sp.scrollWidth>sp.clientWidth+0.5 && fs>12){ fs-=0.5; sp.style.fontSize=fs+'px'; }
+  }
   function showTab(tab, anim){
     if(!GROUP[tab]) tab='normal';
+    if(tab==='normal') requestAnimationFrame(fitPromoText);
     panel.dataset.tab=tab;
     segs.forEach(b=>{ const on=b.dataset.tab===tab; b.classList.toggle('act',on); b.setAttribute('aria-selected',on); });
     const ORDER=panel.classList.contains('noLucky')?['normal','key']:['normal','lucky','key'], n=ORDER.length, ci=ORDER.indexOf(tab);   /* 層疊式：選中為前層，上一組在左後、下一組在右後(循環)；只有兩組時另一組固定在右後 */
@@ -7968,15 +7996,15 @@ function gvIcSpan(cls, name, emoji){
      dc＝暗黑馬戲團(底圖 1188×669，高度貼合 ×0.986547)；danao＝大鬧西遊2(底圖 1303×732，×0.901639) */
   const LUCKY_LAYOUTS={
     dc:{ vortexY:318, brand:{key:'luckygo', max:5, name:'LUCKY GO', logo:(typeof LUCKY_LOGO_IMG==='string'?LUCKY_LOGO_IMG:''), launch:null,
-         dice:false, marquee:'chase', icon:(typeof LUCKY_BATTERY_IMG==='string'?LUCKY_BATTERY_IMG:''), ribbonSub:'收集電力瓶，點燈拼大獎', promoSub:'收集電力瓶拼大獎', launchTitle:null, launchPage:null},
+         dice:false, marquee:'chase', icon:(typeof LUCKY_BATTERY_IMG==='string'?LUCKY_BATTERY_IMG:''), ribbonSub:'收集電力瓶，點燈拼大獎', promoSub:'集電拼大獎', launchTitle:null, launchPage:null},
       spin:{x:343.1, y:548.3, size:122.3, base:(typeof LD_SPIN_BASE==='string'?LD_SPIN_BASE:''), arrows:(typeof LD_SPIN_ARROWS==='string'?LD_SPIN_ARROWS:'')},
       bet:{ box:{x:-256.5, y:582.1, w:138.1, h:59.2, r:7},
             val:{x:-247.6, y:610.7, w:120.4, h:26.6, bg:'rgb(3,7,5)', fs:17.5, fw:700},
             lbl:{x:-252.6, y:585,   w:130.2, h:25.7, bg:'rgb(3,7,5)'} } },
     danao:{ vortexY:290, brand:{key:'sanguo', max:20, cap:true, name:'三國骰', logo:(typeof LUCKY_SANGUO_LOGO==='string'?LUCKY_SANGUO_LOGO:''), launch:null,
-         dice:true, marquee:'multi', icon:(typeof LUCKY_DICE_IMG==='string'?LUCKY_DICE_IMG:''), ribbonSub:'擲骰出征，斬將奪寶', promoSub:'擲骰出征斬將奪寶', launchTitle:null,
+         dice:true, marquee:'multi', icon:(typeof LUCKY_DICE_IMG==='string'?LUCKY_DICE_IMG:''), ribbonSub:'擲骰出征，斬將奪寶', promoSub:'集骰拼大獎', launchTitle:null,
          launchPage:(typeof LUCKY_SANGUO_LAUNCH_PAGE==='string'?{img:LUCKY_SANGUO_LAUNCH_PAGE, w:1914, h:906,
-           modal:[35.32,27.15,29.26,45.70], enter:[23.21,76.09,53.57,14.25]}:null)},   /* 三國骰專屬啟動頁(整頁) */   /* 導流鈕空間有限，比照原「收集電力瓶拼大獎」省去逗號 */
+           modal:[35.32,27.15,29.26,45.70], enter:[23.21,76.09,53.57,14.25]}:null)},   /* 三國骰專屬啟動頁(整頁) */   /* 導流鈕空間有限，比照原「集電拼大獎」省去逗號 */
       spin:{x:348.12, y:545.05, size:143.36, base:(typeof LD_SPIN_BASE_DANAO==='string'?LD_SPIN_BASE_DANAO:''), arrows:(typeof LD_SPIN_ARROWS_DANAO==='string'?LD_SPIN_ARROWS_DANAO:'')},
       bet:{ box:{x:-267.33, y:587.87, w:159.59, h:63.11, r:8},
             val:{x:-265.53, y:617.62, w:155.98, h:30.66, lh:27, bg:'#000', fs:19.5, fw:600},   /* 底圖數字中心比黑底中心高約 1.8px */
@@ -8011,6 +8039,7 @@ function gvIcSpan(cls, name, emoji){
     if(B.icon) panel.querySelectorAll('.bpRib .bat').forEach(im=>{ if(im.src!==B.icon) im.src=B.icon; });
     const rs=panel.querySelector('.bpRib .ribSub'); if(rs && B.ribbonSub) rs.textContent=B.ribbonSub;
     const ps=panel.querySelector('.bpPromo .promoSub'); if(ps && B.promoSub) ps.textContent=B.promoSub;
+    requestAnimationFrame(fitPromoText);
     const inf=panel.querySelector('.bpInfo'); if(inf) inf.setAttribute('aria-label','提高20%押注額啟動');   /* 2026/10：文案刪「即可」，副標已移除 */
     if(window.luckyLaunchTitle) window.luckyLaunchTitle(B.launchTitle);
     if(window.luckyLaunchPage) window.luckyLaunchPage(B.launchPage);
