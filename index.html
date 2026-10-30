@@ -1152,7 +1152,7 @@ body{
    後層壓暗用 ::after 疊層(不用 filter)，LUCKY GO 紅點仍保持鮮紅 ── */
 #gvBetPanel .bpSeg.stack{position:relative;display:block;}
 #gvBetPanel .bpSeg.stack b{--c:#ff9416;--glow:rgba(255,148,22,.45);--bg1:#4b3416;--bg2:#24180a;
-  position:absolute;left:50%;top:50%;width:140px;height:44px;padding:0;flex:none;border-radius:10px;
+  position:absolute;left:50%;top:50%;width:140px;height:57px;padding:0;flex:none;border-radius:10px;   /* 2026/10：高 44 → 57，前卡上下貼齊頁首上緣與分隔線；後排卡同樣 ×0.72 等比變高(31.7 → 41) */
   display:flex;align-items:center;justify-content:center;line-height:1;letter-spacing:0;text-align:center;
   transform:translate(-50%,-50%) translateX(var(--dx,0px)) scale(var(--s,1));
   color:var(--c);font-size:22px;
@@ -1434,6 +1434,7 @@ svg.runFx.run .c{animation:gtRunC .55s cubic-bezier(.45,.05,.75,.6) forwards;}
 #gvBetPanel .bpRib .txt b{color:#fff;font-size:17px;font-weight:700;letter-spacing:.5px;white-space:nowrap;}
 #gvBetPanel .bpRib .txt b em{font-style:normal;color:#ffcb2f;font-size:19px;text-shadow:0 0 8px rgba(255,203,47,.55);}
 #gvBetPanel .bpRib .txt span{color:rgba(255,255,255,.85);font-size:13px;font-weight:500;letter-spacing:1px;white-space:nowrap;}
+#gvBetPanel .bpRib .txt .ribSub{display:none;}   /* 2026/10：緞帶第二行副標(收集電力瓶，點燈拼大獎／擲骰出征，斬將奪寶)移除，主標單行垂直置中 */
 #gvBetPanel .bpRib .bat{height:36px;width:auto;flex:none;filter:drop-shadow(0 0 4px rgba(120,255,90,.75));}   /* 瓶高＝兩行字總高(36px) */
 #gvBetPanel .bpRib .bat.L{transform:rotate(-10deg);}
 #gvBetPanel .bpRib .bat.R{transform:scaleX(-1) rotate(-10deg);}
@@ -4431,9 +4432,9 @@ svg.runFx.run .c{animation:gtRunC .55s cubic-bezier(.45,.05,.75,.6) forwards;}
         <div class="bpPromo" role="button"><img class="bpPromoLogo" alt="LUCKY GO"><span>押注<em>+20%</em>・<b class="promoSub" style="font-weight:inherit">收集電力瓶拼大獎</b></span><i>›</i></div>
       </div>
       <div class="bpPane bpLucky">
-        <div class="bpInfo" aria-label="提高20%押注額即可啟動，收集電力瓶，點燈拼大獎">
+        <div class="bpInfo" aria-label="提高20%押注額啟動">
           <div class="bpRib"><div class="band"><div class="bandIn"><img class="bat L" alt="">
-            <div class="txt"><b>提高<em>20%</em>押注額即可啟動</b><span class="ribSub">收集電力瓶，點燈拼大獎</span></div>
+            <div class="txt"><b>提高<em>20%</em>押注額啟動</b><span class="ribSub">收集電力瓶，點燈拼大獎</span></div>
           <img class="bat R" alt=""></div></div></div>
         </div>
         <div class="bpBody"><div class="bpList"></div><div class="bpBar"><i class="bpThumb"></i></div></div>
@@ -8010,7 +8011,7 @@ function gvIcSpan(cls, name, emoji){
     if(B.icon) panel.querySelectorAll('.bpRib .bat').forEach(im=>{ if(im.src!==B.icon) im.src=B.icon; });
     const rs=panel.querySelector('.bpRib .ribSub'); if(rs && B.ribbonSub) rs.textContent=B.ribbonSub;
     const ps=panel.querySelector('.bpPromo .promoSub'); if(ps && B.promoSub) ps.textContent=B.promoSub;
-    const inf=panel.querySelector('.bpInfo'); if(inf) inf.setAttribute('aria-label',`提高20%押注額即可啟動，${B.ribbonSub||''}`);
+    const inf=panel.querySelector('.bpInfo'); if(inf) inf.setAttribute('aria-label','提高20%押注額啟動');   /* 2026/10：文案刪「即可」，副標已移除 */
     if(window.luckyLaunchTitle) window.luckyLaunchTitle(B.launchTitle);
     if(window.luckyLaunchPage) window.luckyLaunchPage(B.launchPage);
     if(window.gvWheelSetLuckyBrand) window.gvWheelSetLuckyBrand(B.key, B.max, B.cap);   /* 各品牌進度分開；LUCKY GO 集滿次數上限 5，三國骰為封頂模式(+20 骰滿環) */
