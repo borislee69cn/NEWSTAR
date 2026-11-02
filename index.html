@@ -5836,19 +5836,18 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape') closeTtzhy();
 /* ===== 館卡動態圖(暗黑馬戲團、天使奧丁、神鬼奧丁) =====
    卡片內疊一支靜音影片(裁在金框內緣，不出框)＋由原卡圖萃取的金框／名稱色帶疊圖。
    每支：完整播放 → 播完以 0.45s 把最後一格溶接回第 0 格 → 停在開場姿勢。
-   排程：進入大廳 1 秒後暗黑馬戲團開始；暗黑馬戲團播完進入 3 秒冷卻的同時，天使奧丁接著播；
-        暗黑馬戲團冷卻結束再播，如此兩館輪流。
-        神鬼奧丁(solo)規則同暗黑馬戲團：進入大廳 1 秒後與暗黑馬戲團同時開始，播完溶接回第 0 格、冷卻 3 秒再播
-        (兩片同長 3.04s，冷卻結束由暗黑馬戲團的計時同步重播，長時間循環也不會錯開)。
+   排程(由左至右循序、不冷卻)：進入大廳 1 秒後 暗黑馬戲團 開始 → 播完立刻接 天使奧丁 → 播完立刻接 神鬼奧丁
+        → 播完立刻回到暗黑馬戲團，一直循環。順序依卡片在大廳的實際排列(左→右)自動取得。
+        暗黑馬戲團／神鬼奧丁播完溶接回第 0 格；天使奧丁(2.5s)播完停格在 1000X 神力球畫面，下一輪輪到它時再溶接回第 0 格從頭播。
         離開大廳全部暫停，回大廳重設後 1 秒重新開始。
    修正紀錄：影片底下墊第 0 格畫布(.cardPoster)；播完先蓋上最後一格(.cardFreeze)確認顯示後才跳回第 0 格，
    避免跳轉瞬間影片空白露出構圖不同的舊靜態圖 */
 const CARD_SHOWS = {
   dc:   { sel:'[data-fn="國際-熱門遊戲-暗黑馬戲團"]', webm:'CARD_DC_VID_WEBM_B64',   mp4:'CARD_DC_VID_MP4_B64',   ov:'CARD_DC_OVERLAY' },
   odin: { sel:'[data-fn="國際-遊戲館-天使奧丁"]',   webm:'CARD_ODIN_VID_WEBM_B64', mp4:'CARD_ODIN_VID_MP4_B64', ov:'CARD_ODIN_OVERLAY',
-          holdEnd:true, frame:'r26' },  /* 天使奧丁：影片裁在「光束收回 1000X 神力球」(2.5s)，播完直接停格在該畫面，冷卻結束輪到它時再從頭播(溶接) */
+          holdEnd:true, frame:'r26' },  /* 天使奧丁：影片裁在「光束收回 1000X 神力球」(2.5s)，播完直接停格在該畫面，下一輪輪到它時再從頭播(溶接) */
   sg:   { sel:'[data-fn="國際-遊戲館-神鬼奧丁"]',   webm:'CARD_SG_VID_WEBM_B64',   mp4:'CARD_SG_VID_MP4_B64',   ov:'CARD_SG_OVERLAY',
-          solo:true, frame:'r26' }      /* 神鬼奧丁：規則同暗黑馬戲團(完整播放 → 溶接回第 0 格 → 冷卻 3 秒)，自己循環，不與其他館接力 */
+          frame:'r26' }      /* 神鬼奧丁：完整播放 → 溶接回第 0 格(目前為最右一館：播完直接由暗黑馬戲團開始下一輪) */
 };
 const CARD_KEYS = Object.keys(CARD_SHOWS);
 const CARD_URLS = {};
@@ -5949,7 +5948,7 @@ function attachCardVideo(card, key){
     clearTimeout(v._rest); v._want = false;
     const wrapEl = v.parentNode; if(!wrapEl) return;
     if(cfg.holdEnd){                                                          /* 停格：停在最後一格，等下一輪 */
-      if(!cardVid('dc')) v._rest = setTimeout(() => { if(v.isConnected && SHOWS_ON) playCard(key); }, REST_MS);
+      showNext(key, v);                                                       /* 接著播右邊一館 */
       return;
     }
     const fc = wrapEl.querySelector('canvas.cardFreeze');
@@ -5961,14 +5960,7 @@ function attachCardVideo(card, key){
         try{ v.currentTime = 0; }catch(e){ fade(); }
       });
     }else{ try{ v.currentTime = 0; }catch(e){} }
-    if(key === 'dc'){
-      if(SHOWS_ON) playCard('odin');                                          /* 暗黑馬戲團進入冷卻 → 天使奧丁接著播 */
-      v._rest = setTimeout(() => { if(v.isConnected && SHOWS_ON){ playCard('dc'); playCard('sg'); } }, REST_MS);   /* 冷卻結束：暗黑馬戲團與神鬼奧丁同步再播(不累積時間誤差) */
-    }else if(cfg.solo){
-      if(!cardVid('dc')) v._rest = setTimeout(() => { if(v.isConnected && SHOWS_ON) playCard(key); }, REST_MS);   /* 神鬼奧丁：沒有暗黑馬戲團卡時自己冷卻 3 秒再播 */
-    }else if(!cardVid('dc')){
-      v._rest = setTimeout(() => { if(v.isConnected && SHOWS_ON) playCard(key); }, REST_MS);   /* 沒有暗黑馬戲團卡時自行循環 */
-    }
+    showNext(key, v);                                                         /* 接著播右邊一館(最右一館播完 → 冷卻 3 秒回到最左) */
   });
   v.src = url;
   const ov = document.createElement('i'); ov.className = 'cardOv';
@@ -5978,6 +5970,21 @@ function attachCardVideo(card, key){
   if(cfg.frame === 'r26') card.classList.add('vfR26');                         /* 天使／神鬼奧丁卡：金框圓角規格不同，套用自己的裁切圓角 */
   card.prepend(ov); card.prepend(wrap);
   if(SHOWS_ON && key === 'dc') dcCardEnter();                                  /* 已在大廳(切換遊戲區後重繪)：同樣 1 秒後開始 */
+}
+/* 由左至右循序：依卡片在大廳的排列順序(DOM 順序＝畫面左→右)取得目前有掛影片的館 */
+function showOrder(){
+  const list = CARD_KEYS.map(k => [k, document.querySelector('#hallTrack ' + CARD_SHOWS[k].sel)])
+                        .filter(([k, c]) => c && cardVid(k));
+  list.sort((a, b) => (a[1].compareDocumentPosition(b[1]) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
+  return list.map(([k]) => k);
+}
+/* 一館播完 → 立刻接著播右邊一館；最右一館播完 → 直接回到最左一館(不冷卻)，無限循環 */
+function showNext(key, v){
+  if(!SHOWS_ON) return;
+  const ord = showOrder(), i = ord.indexOf(key);
+  if(i >= 0 && i < ord.length - 1){ playCard(ord[i + 1]); return; }
+  if(ord.length > 1){ playCard(ord[0]); return; }
+  v._rest = setTimeout(() => { if(v.isConnected && SHOWS_ON) playCard(key); }, REST_MS);   /* 只剩一館時保留 3 秒間隔，避免同一支影片無縫連播 */
 }
 function attachDcCardVideo(card){ attachCardVideo(card, 'dc'); }
 function attachHallCardVideos(){
@@ -5994,11 +6001,11 @@ function resetCard(key){
   const fc = v.parentNode && v.parentNode.querySelector('canvas.cardFreeze');
   if(fc){ fc.style.transition = 'none'; fc.style.opacity = '0'; }
 }
-/* dcCardEnter — 進入大廳(登入、從遊戲／說明頁返回、切換遊戲區重繪)：各館都回到第 0 格，1 秒後暗黑馬戲團(→天使奧丁接力)與神鬼奧丁同時開始 */
+/* dcCardEnter — 進入大廳(登入、從遊戲／說明頁返回、切換遊戲區重繪)：各館都回到第 0 格，1 秒後由左至右循序開始 */
 function dcCardEnter(){
   SHOWS_ON = true; clearTimeout(SHOW_START_T);
   CARD_KEYS.forEach(resetCard);
-  SHOW_START_T = setTimeout(() => { if(cardVid('dc')) playCard('dc'); else playCard('odin'); playCard('sg'); }, SHOW_START_DELAY);   /* 神鬼奧丁與暗黑馬戲團同時開始 */
+  SHOW_START_T = setTimeout(() => { const o = showOrder(); if(o.length) playCard(o[0]); }, SHOW_START_DELAY);   /* 由最左一館(暗黑馬戲團)開始，依序往右播 */
 }
 /* dcCardLeave — 離開大廳(點館圖進入載入／說明頁／遊戲)：全部暫停並取消排程 */
 function dcCardLeave(){
