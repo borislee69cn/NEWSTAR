@@ -4838,7 +4838,7 @@ const BOOT_VID_WEBM_B64 = "GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZ
   let BGM_VOL = 0.20;
   const BGM_FADE = 3000, BGM_MIME = 'audio/mpeg';
   const bgm = document.getElementById('bgm');
-  /* 這三個給 bootStart() 用。必須宣告在 BGM 區塊之前——fadeInBgm() 會呼叫 bootStart(),
+  /* 這三個給 bootStart()／tryStartBgm() 用。必須宣告在 BGM 區塊之前——tryStartBgm() 會讀 bootStarted,
      而舊瀏覽器的 play() 回傳 undefined 時該呼叫是同步的,宣告在後面會撞上 TDZ。 */
   const enterEl   = document.getElementById('bootEnter');
   const ENTER_TXT = enterEl ? enterEl.textContent : '';
@@ -4916,13 +4916,14 @@ const BOOT_VID_WEBM_B64 = "GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZ
       if(k < 1) requestAnimationFrame(step); else bgmFadeDone = true;
     })();
     console.log('[BGM] 開始淡入(' + bgmMode + ')');
-    bootStart();          /* 音樂就緒即開跑進度條,使 Loading 全程有音樂 */
+    /* 不再由這裡觸發 bootStart()：瀏覽器允許有聲自動播放時(Chrome 對常造訪的網站、或已允許音效的網站)，
+       這行會讓片頭不等點擊就開播。現在一律由玩家點擊「點擊開始」才啟動，音樂也在同一次點擊開始淡入。 */
   }
 
   /* 播放嘗試:瀏覽器禁止無手勢的有聲播放,故在資源就緒時、開屏點擊時、
      以及任何一次 pointerdown 都各試一次;bgmFading 旗標確保淡入只跑一次。 */
   function tryStartBgm(){
-    if(bgmFading) return;
+    if(bgmFading || !bootStarted) return;   /* 玩家點擊「點擊開始」之前一律不放音樂(即使瀏覽器允許自動播放)，片頭畫面靜止等待 */
     if(bgmMode === 'webaudio'){
       if(actx && actx.state === 'suspended') actx.resume().then(fadeInBgm).catch(()=>{});
       else if(actx) fadeInBgm();
@@ -4973,11 +4974,10 @@ const BOOT_VID_WEBM_B64 = "GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZ
   bgmNextSource();                                   /* 起手:Blob 來源 */
   document.addEventListener('pointerdown', tryStartBgm);
 
-  /* ===== 啟動流程(自適應) =====
-     目標:進度條跑動時就要有音樂。但瀏覽器禁止無使用者手勢的有聲播放,故:
-       音訊順利自動播放 → fadeInBgm() 直接呼叫 bootStart(),Loading 全程有音樂
-       被擋下(1.2 秒內未開始) → 顯示「點擊開始」,由這次手勢同時解鎖音訊並開跑進度條
-     兩條路徑都保證「進度條與音樂同時開始」,差別只在是否多一次點擊。 */
+  /* ===== 啟動流程(一律等待點擊) =====
+     開啟網頁 → 停在片頭第一格(星城 LOGO)＋「點擊開始」→ 玩家點擊 → 片頭影片、進度條、背景音樂同時開始。
+     不論瀏覽器是否允許自動播放都走同一條路徑(原本「允許自動播放就直接開跑」的分支已移除——
+     那條分支在 GitHub Pages 等常造訪的網站上會讓片頭一開頁就自己播放)。 */
   function bootStart(){
     if(bootStarted) return;
     bootStarted = true;
@@ -4986,12 +4986,10 @@ const BOOT_VID_WEBM_B64 = "GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZ
     tryStartBgm();
     startIntro();          /* 開場影片＋同步進度條(影片不可用時自動改走 fakeLoad) */
   }
-  setTimeout(()=>{
-    if(bootStarted) return;
-    if(enterEl) enterEl.textContent = '點 擊 開 始';
-    boot.classList.add('needTap');
-    boot.addEventListener('click', bootStart, {once:true});
-  }, 1200);
+  /* 一開頁就顯示「點擊開始」(不再等 1.2 秒偵測自動播放) */
+  if(enterEl) enterEl.textContent = '點 擊 開 始';
+  boot.classList.add('needTap');
+  boot.addEventListener('click', bootStart, {once:true});
 })();
 
 /* ================= 選擇角色畫面（角色卡片列表／創建角色／倒數計時／登入大廳） =================
